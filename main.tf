@@ -3,8 +3,13 @@ provider "aws" {
 }
 
 provider "aws" {
-    region = "us-east-1"
-    alias = "acm_provider"
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+
+provider "aws" {
+  alias  = "acm_provider"
+  region = "us-east-1"
 }
 
 terraform {
@@ -79,7 +84,55 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     max_ttl                = 86400
   }
 
+  ordered_cache_behavior {
+    path_pattern     = "/members-info.html"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = aws_s3_bucket.philomusica_website.bucket_regional_domain_name
 
+	lambda_function_association {
+      event_type = "viewer-request"
+      lambda_arn = "${aws_lambda_function.lambda_edge.qualified_arn}"
+    }
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 86400
+    max_ttl                = 86400
+  }
+
+  ordered_cache_behavior {
+    path_pattern     = "/secure/*"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = aws_s3_bucket.philomusica_website.bucket_regional_domain_name
+
+	lambda_function_association {
+      event_type = "viewer-request"
+      lambda_arn = "${aws_lambda_function.lambda_edge.qualified_arn}"
+    }
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 86400
+    max_ttl                = 86400
+  }
   price_class = "PriceClass_All"
 
   restrictions {
@@ -179,4 +232,228 @@ resource "aws_route53_record" "www_ip6" {
         zone_id = aws_cloudfront_distribution.s3_distribution.hosted_zone_id
         evaluate_target_health = false
     }
+}
+
+resource "aws_iam_role" "lambda_edge_iam_role" {
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": ["lambda.amazonaws.com", "edgelambda.amazonaws.com"]
+      },
+      "Effect": "Allow"
+    }
+  ]
+}
+EOF
+}
+
+data "aws_iam_policy_document" "lambda_edge_policy_document" {
+  statement {
+    sid = "1"
+
+    actions = [
+	  "logs:CreateLogGroup",
+	  "logs:CreateLogStream",
+	  "logs:PutLogEvents"
+    ]
+
+    resources = [
+	  "arn:aws:logs:*:*:*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "lambda_edge_policy" {
+  name   = "lambda_edge_policy"
+  path   = "/"
+  policy = data.aws_iam_policy_document.lambda_edge_policy_document.json
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_edge_policy_attachment" {
+  role       = aws_iam_role.lambda_edge_iam_role.name
+  policy_arn = aws_iam_policy.lambda_edge_policy.arn
+}
+
+data "archive_file" "dummy_archive" {
+  type        = "zip"
+  output_path = "${path.module}/function.zip"
+
+  source {
+    content  = "This is a dummy zip file"
+    filename = "dummy.txt"
+  }
+}
+
+resource "aws_lambda_function" "lambda_edge" {
+	filename = data.archive_file.dummy_archive.output_path
+	function_name = "philo_auth_lambda"
+	role = aws_iam_role.lambda_edge_iam_role.arn
+	handler = "index.handler"
+	provider = aws.us_east_1
+	publish  = true
+	runtime = "nodejs12.x"
+}
+
+resource "aws_cloudwatch_log_group" "lambda_edge_log_group" {
+  name = format("/aws/lambda/%s", aws_lambda_function.lambda_edge.function_name)
+  retention_in_days = 14
+}
+
+resource "aws_api_gateway_rest_api" "contact" {
+  name = "philomusica-contact-us"
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+}
+
+resource "aws_api_gateway_resource" "contact" {
+  parent_id   = aws_api_gateway_rest_api.contact.root_resource_id
+  path_part   = "contact-us"
+  rest_api_id = aws_api_gateway_rest_api.contact.id
+}
+
+resource "aws_api_gateway_method" "contact_options" {
+  authorization = "NONE"
+  http_method   = "OPTIONS"
+  resource_id   = aws_api_gateway_resource.contact.id
+  rest_api_id   = aws_api_gateway_rest_api.contact.id
+}
+
+resource "aws_api_gateway_method_response" "options_200" {
+  rest_api_id   = aws_api_gateway_rest_api.contact.id
+  resource_id   = aws_api_gateway_resource.contact.id
+  http_method   = aws_api_gateway_method.contact_options.http_method
+  status_code   = "200"
+  response_models = {
+        "application/json" = "Empty"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true,
+    "method.response.header.Access-Control-Allow-Methods" = true,
+    "method.response.header.Access-Control-Allow-Origin" = true
+  }
+  depends_on = [aws_api_gateway_method.contact_options]
+}
+
+resource "aws_api_gateway_integration" "options_integration" {
+    rest_api_id   = aws_api_gateway_rest_api.contact.id
+    resource_id   = aws_api_gateway_resource.contact.id
+    http_method   = aws_api_gateway_method.contact_options.http_method
+    type          = "MOCK"
+    depends_on = [aws_api_gateway_method.contact_options]
+}
+
+resource "aws_api_gateway_integration_response" "options_integration_response" {
+    rest_api_id   = aws_api_gateway_rest_api.contact.id
+    resource_id   = aws_api_gateway_resource.contact.id
+    http_method   = aws_api_gateway_method.contact_options.http_method
+    status_code   = aws_api_gateway_method_response.options_200.status_code
+    response_parameters = {
+        "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+        "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS,POST,PUT'",
+        "method.response.header.Access-Control-Allow-Origin" = "'*'"
+    }
+    depends_on = [aws_api_gateway_method_response.options_200, aws_api_gateway_integration.options_integration]
+}
+
+resource "aws_api_gateway_method" "contact" {
+  authorization = "NONE"
+  http_method   = "POST"
+  resource_id   = aws_api_gateway_resource.contact.id
+  rest_api_id   = aws_api_gateway_rest_api.contact.id
+}
+
+resource "aws_api_gateway_method_response" "cors_method_response_200" {
+    rest_api_id   = aws_api_gateway_rest_api.contact.id
+    resource_id   = aws_api_gateway_resource.contact.id
+    http_method   = aws_api_gateway_method.contact.http_method
+    status_code   = "200"
+    response_parameters = {
+        "method.response.header.Access-Control-Allow-Origin" = true
+    }
+    depends_on = [aws_api_gateway_method.contact]
+}
+
+resource "aws_api_gateway_integration" "contact_post" {
+  rest_api_id             = aws_api_gateway_rest_api.contact.id
+  resource_id             = aws_api_gateway_resource.contact.id
+  http_method             = aws_api_gateway_method.contact.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.contact.invoke_arn
+}
+
+resource "aws_api_gateway_deployment" "contact" {
+  rest_api_id = aws_api_gateway_rest_api.contact.id
+
+  triggers = {
+    # NOTE: The configuration below will satisfy ordering considerations,
+    #       but not pick up all future REST API changes. More advanced patterns
+    #       are possible, such as using the filesha1() function against the
+    #       Terraform configuration file(s) or removing the .id references to
+    #       calculate a hash against whole resources. Be aware that using whole
+    #       resources will show a difference after the initial implementation.
+    #       It will stabilize to only change when resources change afterwards.
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.contact.id,
+      aws_api_gateway_method.contact_options.id,
+      aws_api_gateway_method.contact.id,
+      aws_api_gateway_integration.options_integration.id,
+      aws_api_gateway_integration.contact_post.id,
+    ]))
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_api_gateway_stage" "contact" {
+  deployment_id = aws_api_gateway_deployment.contact.id
+  rest_api_id   = aws_api_gateway_rest_api.contact.id
+  stage_name    = "philomusica"
+}
+
+# Lambda
+resource "aws_lambda_permission" "apigw_lambda" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.contact.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "arn:aws:execute-api:${var.aws_region}:${var.account_id}:${aws_api_gateway_rest_api.contact.id}/*/${aws_api_gateway_method.contact.http_method}${aws_api_gateway_resource.contact.path}"
+}
+
+resource "aws_lambda_function" "contact" {
+  filename = data.archive_file.dummy_archive.output_path
+  function_name = "philomusica-contact-form"
+  role          = aws_iam_role.contact.arn
+  handler       = "index.handler"
+  runtime       = "nodejs14.x"
+}
+
+# IAM
+resource "aws_iam_role" "contact" {
+  name = "philomusica-contact-form-role"
+
+  assume_role_policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+POLICY
 }
