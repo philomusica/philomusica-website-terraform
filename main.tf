@@ -435,6 +435,13 @@ resource "aws_lambda_function" "contact" {
   role          = aws_iam_role.contact.arn
   handler       = "index.handler"
   runtime       = "nodejs14.x"
+  environment {
+	variables = {
+	  RECAPTCHA_SECRET = "changeme"
+      RECEIVER = "changeme"
+	  SENDER = "changeme"
+	}
+  }
 }
 
 # IAM
@@ -456,6 +463,30 @@ resource "aws_iam_role" "contact" {
   ]
 }
 POLICY
+}
+
+resource "aws_iam_policy" "contact_lambda_policy" {
+  name = "contact_lambda_policy"
+  path = "/"
+  policy = jsonencode({
+    Statement = [
+	  {
+        Action = [
+			"ses:SendRawEmail",
+            "ses:SendEmail",
+        ]
+        Effect = "Allow"
+        Resource = "*"
+        Sid = "1"
+      },
+    ]
+    Version = "2012-10-17"
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "contact_lambda_policy_attachment" {
+  role       = aws_iam_role.contact.name
+  policy_arn = aws_iam_policy.contact_lambda_policy.arn
 }
 
 resource "aws_ses_domain_identity" "domain" {
