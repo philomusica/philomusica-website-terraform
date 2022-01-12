@@ -389,8 +389,8 @@ resource "aws_api_gateway_method_response" "options_200" {
   }
 
   response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Headers" = true,
+    "method.response.header.Access-Control-Allow-Methods" = true,
     "method.response.header.Access-Control-Allow-Origin"  = true
   }
   depends_on = [aws_api_gateway_method.contact_options]
@@ -402,12 +402,6 @@ resource "aws_api_gateway_integration" "options_integration" {
     http_method   = aws_api_gateway_method.contact_options.http_method
     type          = "MOCK"
     depends_on = [aws_api_gateway_method.contact_options]
-	passthrough_behavior = "WHEN_NO_MATCH"
-	request_templates = {
-	  "application/json" = jsonencode({
-	    statusCode = 200
-	  })
-	}
 }
 
 resource "aws_api_gateway_integration_response" "options_integration_response" {
@@ -423,7 +417,7 @@ resource "aws_api_gateway_integration_response" "options_integration_response" {
 	response_templates = {
 	  "application/json" = ""
 	}
-    depends_on = [aws_api_gateway_method_response.options_200, aws_api_gateway_integration.options_integration]
+    depends_on = [aws_api_gateway_method_response.options_200]
 }
 
 resource "aws_api_gateway_method" "contact" {
@@ -447,17 +441,6 @@ resource "aws_api_gateway_method_response" "cors_method_response_200" {
     depends_on = [aws_api_gateway_method.contact]
 }
 
-resource "aws_api_gateway_integration_response" "contact_integration_response" {
-    rest_api_id   = aws_api_gateway_rest_api.contact.id
-    resource_id   = aws_api_gateway_resource.contact.id
-    http_method   = aws_api_gateway_method.contact.http_method
-    status_code   = aws_api_gateway_method_response.cors_method_response_200.status_code
-	response_parameters = {
-	  "method.response.header.Access-Control-Allow-Origin" = "'*'"
-	}
-    depends_on = [aws_api_gateway_method_response.cors_method_response_200]
-}
-
 resource "aws_api_gateway_integration" "contact_post" {
   rest_api_id             = aws_api_gateway_rest_api.contact.id
   resource_id             = aws_api_gateway_resource.contact.id
@@ -465,31 +448,12 @@ resource "aws_api_gateway_integration" "contact_post" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.contact.invoke_arn
+  depends_on = [aws_api_gateway_method.contact]
 }
 
 resource "aws_api_gateway_deployment" "contact" {
   rest_api_id = aws_api_gateway_rest_api.contact.id
-
-  triggers = {
-    # NOTE: The configuration below will satisfy ordering considerations,
-    #       but not pick up all future REST API changes. More advanced patterns
-    #       are possible, such as using the filesha1() function against the
-    #       Terraform configuration file(s) or removing the .id references to
-    #       calculate a hash against whole resources. Be aware that using whole
-    #       resources will show a difference after the initial implementation.
-    #       It will stabilize to only change when resources change afterwards.
-    redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.contact.id,
-      aws_api_gateway_method.contact_options.id,
-      aws_api_gateway_method.contact.id,
-      aws_api_gateway_integration.options_integration.id,
-      aws_api_gateway_integration.contact_post.id,
-    ]))
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
+  depends_on = [aws_api_gateway_integration.contact_post]
 }
 
 resource "aws_api_gateway_stage" "contact" {
