@@ -1,5 +1,5 @@
 resource "aws_api_gateway_base_path_mapping" "api_custom_domain" {
-  api_id      = aws_api_gateway_rest_api.contact.id
+  api_id      = aws_api_gateway_rest_api.api.id
   domain_name = format("api.%s", var.domain_name)
   stage_name  = "philomusica"
 }
@@ -15,28 +15,28 @@ resource "aws_api_gateway_domain_name" "api_custom_domain" {
   }
 }
 
-resource "aws_api_gateway_rest_api" "contact" {
-  name = "philomusica-contact-us"
+resource "aws_api_gateway_rest_api" "api" {
+  name = "philomusica-website"
   endpoint_configuration {
     types = ["REGIONAL"]
   }
 }
 
 resource "aws_api_gateway_resource" "contact" {
-  parent_id   = aws_api_gateway_rest_api.contact.root_resource_id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
   path_part   = "contact-us"
-  rest_api_id = aws_api_gateway_rest_api.contact.id
+  rest_api_id = aws_api_gateway_rest_api.api.id
 }
 
 resource "aws_api_gateway_method" "contact_options" {
   authorization = "NONE"
   http_method   = "OPTIONS"
   resource_id   = aws_api_gateway_resource.contact.id
-  rest_api_id   = aws_api_gateway_rest_api.contact.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
 }
 
 resource "aws_api_gateway_method_response" "options_200" {
-  rest_api_id   = aws_api_gateway_rest_api.contact.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.contact.id
   http_method   = aws_api_gateway_method.contact_options.http_method
   status_code   = "200"
@@ -53,7 +53,7 @@ resource "aws_api_gateway_method_response" "options_200" {
 }
 
 resource "aws_api_gateway_integration" "options_integration" {
-    rest_api_id   = aws_api_gateway_rest_api.contact.id
+    rest_api_id   = aws_api_gateway_rest_api.api.id
     resource_id   = aws_api_gateway_resource.contact.id
     http_method   = aws_api_gateway_method.contact_options.http_method
     type          = "MOCK"
@@ -61,7 +61,7 @@ resource "aws_api_gateway_integration" "options_integration" {
 }
 
 resource "aws_api_gateway_integration_response" "options_integration_response" {
-    rest_api_id   = aws_api_gateway_rest_api.contact.id
+    rest_api_id   = aws_api_gateway_rest_api.api.id
     resource_id   = aws_api_gateway_resource.contact.id
     http_method   = aws_api_gateway_method.contact_options.http_method
     status_code   = aws_api_gateway_method_response.options_200.status_code
@@ -80,11 +80,11 @@ resource "aws_api_gateway_method" "contact" {
   authorization = "NONE"
   http_method   = "POST"
   resource_id   = aws_api_gateway_resource.contact.id
-  rest_api_id   = aws_api_gateway_rest_api.contact.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
 }
 
 resource "aws_api_gateway_method_response" "cors_method_response_200" {
-    rest_api_id   = aws_api_gateway_rest_api.contact.id
+    rest_api_id   = aws_api_gateway_rest_api.api.id
     resource_id   = aws_api_gateway_resource.contact.id
     http_method   = aws_api_gateway_method.contact.http_method
     status_code   = "200"
@@ -98,7 +98,7 @@ resource "aws_api_gateway_method_response" "cors_method_response_200" {
 }
 
 resource "aws_api_gateway_integration" "contact_post" {
-  rest_api_id             = aws_api_gateway_rest_api.contact.id
+  rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = aws_api_gateway_resource.contact.id
   http_method             = aws_api_gateway_method.contact.http_method
   integration_http_method = "POST"
@@ -107,13 +107,13 @@ resource "aws_api_gateway_integration" "contact_post" {
   depends_on = [aws_api_gateway_method.contact]
 }
 
-resource "aws_api_gateway_deployment" "contact" {
-  rest_api_id = aws_api_gateway_rest_api.contact.id
+resource "aws_api_gateway_deployment" "api" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
   depends_on = [aws_api_gateway_integration.contact_post]
 }
 
-resource "aws_api_gateway_stage" "contact" {
-  deployment_id = aws_api_gateway_deployment.contact.id
-  rest_api_id   = aws_api_gateway_rest_api.contact.id
+resource "aws_api_gateway_stage" "api" {
+  deployment_id = aws_api_gateway_deployment.api.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
   stage_name    = "philomusica"
 }
