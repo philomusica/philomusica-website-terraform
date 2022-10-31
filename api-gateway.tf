@@ -1,7 +1,8 @@
 resource "aws_api_gateway_base_path_mapping" "api_custom_domain" {
   api_id      = aws_api_gateway_rest_api.api.id
   domain_name = format("api.%s", var.domain_name)
-  stage_name  = "philomusica"
+  stage_name = aws_api_gateway_stage.api.stage_name
+  depends_on = [aws_api_gateway_deployment.api]
 }
 
 resource "aws_api_gateway_domain_name" "api_custom_domain" {
