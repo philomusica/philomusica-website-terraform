@@ -20,6 +20,9 @@ resource "aws_lambda_function" "contact" {
 	  SENDER = "changeme"
 	}
   }
+  lifecycle {
+	ignore_changes = [ environment[0].variables ]
+  }
 }
 
 resource "aws_iam_role" "contact" {
