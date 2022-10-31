@@ -27,3 +27,16 @@ resource "aws_s3_bucket_policy" "website_bucket_policy" {
 	})
 }
 
+resource "aws_s3_bucket" "philomusica_website_members_only_content" {
+	bucket = "philomusica-website-members-only-content"
+	acl = "private"
+}
+
+resource "aws_s3_bucket_public_access_block" "philomusica_website_members_only_content" {
+  bucket = aws_s3_bucket.philomusica_website_members_only_content.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}

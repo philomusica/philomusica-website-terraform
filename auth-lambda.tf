@@ -49,7 +49,7 @@ resource "aws_lambda_function" "lambda_edge" {
 	handler = "index.handler"
 	provider = aws.us_east_1
 	publish  = true
-	runtime = "nodejs12.x"
+	runtime = "nodejs14.x"
 }
 
 resource "aws_cloudwatch_log_group" "lambda_edge_log_group" {
