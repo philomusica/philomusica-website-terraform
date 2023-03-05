@@ -1,4 +1,4 @@
-data "aws_route53_zone" "philomusica_hosted_zone" {
+resource "aws_route53_zone" "philomusica_hosted_zone" {
     name = "${var.domain_name}"
 }
 
@@ -16,12 +16,12 @@ resource "aws_route53_record" "certification_validation" {
     records         = [each.value.record]
     ttl             = 60
     type            = each.value.type
-    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+    zone_id = aws_route53_zone.philomusica_hosted_zone.zone_id
 }
 
 resource "aws_route53_record" "url_ip4" {
     name = "${var.domain_name}"
-    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+    zone_id = aws_route53_zone.philomusica_hosted_zone.zone_id
     type = "A"
 
     alias {
@@ -33,7 +33,7 @@ resource "aws_route53_record" "url_ip4" {
 
 resource "aws_route53_record" "url_ip6" {
     name = "${var.domain_name}"
-    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+    zone_id = aws_route53_zone.philomusica_hosted_zone.zone_id
     type = "AAAA"
 
     alias {
@@ -45,7 +45,7 @@ resource "aws_route53_record" "url_ip6" {
 
 resource "aws_route53_record" "www_ip4" {
     name = "www.${var.domain_name}"
-    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+    zone_id = aws_route53_zone.philomusica_hosted_zone.zone_id
     type = "A"
 
     alias {
@@ -57,7 +57,7 @@ resource "aws_route53_record" "www_ip4" {
 
 resource "aws_route53_record" "www_ip6" {
     name = "www.${var.domain_name}"
-    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+    zone_id = aws_route53_zone.philomusica_hosted_zone.zone_id
     type = "AAAA"
 
     alias {
@@ -81,12 +81,12 @@ resource "aws_route53_record" "certification_validation_local_region" {
     records         = [each.value.record]
     ttl             = 60
     type            = each.value.type
-    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+    zone_id = aws_route53_zone.philomusica_hosted_zone.zone_id
 }
 
 resource "aws_route53_record" "api_custom_domain" {
     name = format("api.%s", var.domain_name)
-    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+    zone_id = aws_route53_zone.philomusica_hosted_zone.zone_id
     type = "A"
 	alias {
       evaluate_target_health = true
@@ -97,7 +97,7 @@ resource "aws_route53_record" "api_custom_domain" {
 
 resource "aws_route53_record" "amazonses_dkim_record" {
   count   = 3
-  zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+  zone_id = aws_route53_zone.philomusica_hosted_zone.zone_id
   name    = "${element(aws_ses_domain_dkim.domain.dkim_tokens, count.index)}._domainkey"
   type    = "CNAME"
   ttl     = "600"
@@ -106,7 +106,7 @@ resource "aws_route53_record" "amazonses_dkim_record" {
 
 resource "aws_route53_record" "email_record" {
     name = "${var.domain_name}"
-    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+    zone_id = aws_route53_zone.philomusica_hosted_zone.zone_id
 	ttl = "3600"
     type = "MX"
 	records = [ "10 ${var.mx_domain_1}", "20 ${var.mx_domain_2}" ]
@@ -114,7 +114,7 @@ resource "aws_route53_record" "email_record" {
 
 resource "aws_route53_record" "spf_record" {
     name = "${var.domain_name}"
-    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+    zone_id = aws_route53_zone.philomusica_hosted_zone.zone_id
 	ttl = "3600"
     type = "TXT"
 	records = [ "v=spf1 include:${var.spf_domain} ~all", "google-site-verification=${var.google_site_verification_key}" ]
