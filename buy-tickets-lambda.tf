@@ -53,7 +53,7 @@ resource "aws_iam_policy" "buy_tickets_lambda_policy" {
             "dynamodb:Scan",
             "dynamodb:GetItem",
         ]
-        Resource = "${aws_dynamodb_table.concert_tickets_table.arn}"
+        Resource = "${aws_dynamodb_table.orders_table.arn}"
         Effect = "Allow"
         Sid = "1"
       },
