@@ -1,10 +1,22 @@
 resource "aws_s3_bucket" "philomusica_website" {
 	bucket = "philomusica-website"
-	acl = "private"
-	website {
-		index_document = "index.html"
-		error_document = "error.html"
-	}
+}
+
+resource "aws_s3_bucket_acl" "philomusica_website_acl" {
+  bucket = aws_s3_bucket.philomusica_website.id
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_website_configuration" "philomusica_website_config" {
+  bucket = aws_s3_bucket.philomusica_website.id
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "error.html"
+  }
 }
 
 resource "aws_s3_bucket_policy" "website_bucket_policy" {
@@ -29,7 +41,11 @@ resource "aws_s3_bucket_policy" "website_bucket_policy" {
 
 resource "aws_s3_bucket" "philomusica_website_members_only_content" {
 	bucket = "philomusica-website-members-only-content"
-	acl = "private"
+}
+
+resource "aws_s3_bucket_acl" "philomusica_website_members_only_acl" {
+  bucket = aws_s3_bucket.philomusica_website_members_only_content.id
+  acl    = "private"
 }
 
 resource "aws_s3_bucket_public_access_block" "philomusica_website_members_only_content" {

@@ -103,3 +103,27 @@ resource "aws_route53_record" "amazonses_dkim_record" {
   ttl     = "600"
   records = ["${element(aws_ses_domain_dkim.domain.dkim_tokens, count.index)}.dkim.amazonses.com"]
 }
+
+resource "aws_route53_record" "email_record" {
+    name = "mx-record"
+    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+	ttl = "3600"
+    type = "MX"
+	records = [ "10 ${var.mx_domain_1}", "20 ${var.mx_domain_2}" ]
+}
+
+resource "aws_route53_record" "spf_record" {
+    name = "spf-record"
+    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+	ttl = "3600"
+    type = "TXT"
+	records = [ "v=spf1 include:${var.spf_domain} ~all" ]
+}
+
+resource "aws_route53_record" "google_verification_record" {
+    name = "google-site-verification-record"
+    zone_id = data.aws_route53_zone.philomusica_hosted_zone.zone_id
+	ttl = "3600"
+    type = "TXT"
+	records = [ "google-site-verification=${var.google_site_verification_key}" ]
+}
