@@ -15,11 +15,9 @@ resource "aws_lambda_function" "get_concerts" {
   runtime       = "go1.x"
   environment {
 	variables = {
-	  TABLE_NAME = "changeme"
+	  CONCERTS_TABLE = aws_dynamodb_table.concerts_table.name
+	  ORDERS_TABLE = aws_dynamodb_table.orders_table.name
 	}
-  }
-  lifecycle {
-	ignore_changes = [ environment[0].variables ]
   }
 }
 
