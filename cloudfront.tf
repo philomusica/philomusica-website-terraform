@@ -39,9 +39,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = aws_s3_bucket.philomusica_website.bucket_regional_domain_name
 
-	lambda_function_association {
+    lambda_function_association {
       event_type = "viewer-request"
-      lambda_arn = "${aws_lambda_function.lambda_edge.qualified_arn}"
+      lambda_arn = aws_lambda_function.lambda_edge.qualified_arn
     }
 
     forwarded_values {
@@ -64,9 +64,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = aws_s3_bucket.philomusica_website.bucket_regional_domain_name
 
-	lambda_function_association {
+    lambda_function_association {
       event_type = "viewer-request"
-      lambda_arn = "${aws_lambda_function.lambda_edge.qualified_arn}"
+      lambda_arn = aws_lambda_function.lambda_edge.qualified_arn
     }
 
     forwarded_values {
@@ -91,8 +91,8 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   viewer_certificate {
-    acm_certificate_arn = aws_acm_certificate.cert.arn
-    ssl_support_method = "sni-only"
+    acm_certificate_arn      = aws_acm_certificate.cert.arn
+    ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2019"
   }
 }

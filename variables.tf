@@ -1,27 +1,27 @@
 variable "aws_region" {
-	type = string
-}	
+  type = string
+}
 
 variable "account_id" {
-	type = string
+  type = string
 }
 
 variable "domain_name" {
-	type = string
+  type = string
 }
 
 variable "mx_domain_1" {
-	type = string
+  type = string
 }
 
 variable "mx_domain_2" {
-	type = string
+  type = string
 }
 
 variable "spf_domain" {
-	type = string
+  type = string
 }
 
 variable "google_site_verification_key" {
-	type = string
+  type = string
 }

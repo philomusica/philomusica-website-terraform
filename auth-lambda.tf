@@ -20,13 +20,13 @@ data "aws_iam_policy_document" "lambda_edge_policy_document" {
     sid = "1"
 
     actions = [
-	  "logs:CreateLogGroup",
-	  "logs:CreateLogStream",
-	  "logs:PutLogEvents"
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
     ]
 
     resources = [
-	  "arn:aws:logs:*:*:*"
+      "arn:aws:logs:*:*:*"
     ]
   }
 }
@@ -43,17 +43,17 @@ resource "aws_iam_role_policy_attachment" "lambda_edge_policy_attachment" {
 }
 
 resource "aws_lambda_function" "lambda_edge" {
-	filename = data.archive_file.dummy_archive.output_path
-	function_name = "philo_auth_lambda"
-	role = aws_iam_role.lambda_edge_iam_role.arn
-	handler = "index.handler"
-	provider = aws.us_east_1
-	publish  = true
-	runtime = "nodejs14.x"
+  filename      = data.archive_file.dummy_archive.output_path
+  function_name = "philo_auth_lambda"
+  role          = aws_iam_role.lambda_edge_iam_role.arn
+  handler       = "index.handler"
+  provider      = aws.us_east_1
+  publish       = true
+  runtime       = "nodejs14.x"
 }
 
 resource "aws_cloudwatch_log_group" "lambda_edge_log_group" {
-  name = format("/aws/lambda/%s", aws_lambda_function.lambda_edge.function_name)
+  name              = format("/aws/lambda/%s", aws_lambda_function.lambda_edge.function_name)
   retention_in_days = 14
 }
 
