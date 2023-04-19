@@ -15,11 +15,12 @@ resource "aws_lambda_function" "basket_service" {
   runtime       = "go1.x"
   environment {
     variables = {
-      TABLE_NAME = "changeme"
+      CONCERTS_TABLE             = aws_dynamodb_table.concerts_table.name
+      ORDERS_TABLE               = aws_dynamodb_table.orders_table.name
+      STRIPE_SECRET              = var.stripe_secret
+      TRANSACTION_FEE_PERCENTAGE = var.transaction_fee_percentage
+      TRANSACTION_FEE_FLAT_RATE  = var.transaction_fee_flat_rate
     }
-  }
-  lifecycle {
-    ignore_changes = [environment[0].variables]
   }
 }
 
@@ -43,6 +44,11 @@ resource "aws_iam_role" "basket_service" {
 POLICY
 }
 
+resource "aws_cloudwatch_log_group" "basket_service_log_group" {
+  name              = "/aws/lambda/${aws_lambda_function.basket_service.function_name}"
+  retention_in_days = 14
+}
+
 resource "aws_iam_policy" "basket_service_lambda_policy" {
   name = "basket_service_lambda_policy"
   path = "/"
@@ -52,11 +58,23 @@ resource "aws_iam_policy" "basket_service_lambda_policy" {
         Action = [
           "dynamodb:Scan",
           "dynamodb:GetItem",
+          "dynamodb:Query",
+          "dynamodb:PutItem",
         ]
-        Resource = "${aws_dynamodb_table.orders_table.arn}"
+        Resource = ["${aws_dynamodb_table.orders_table.arn}", "${aws_dynamodb_table.concerts_table.arn}"]
+        Effect   = "Allow"
+        Sid      = "0"
+      },
+      {
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+        ]
+        Resource = "${aws_cloudwatch_log_group.basket_service_log_group.arn}:*"
         Effect   = "Allow"
         Sid      = "1"
-      },
+      }
     ]
     Version = "2012-10-17"
   })

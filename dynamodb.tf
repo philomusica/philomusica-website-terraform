@@ -17,20 +17,20 @@ resource "aws_dynamodb_table" "concerts_table" {
 resource "aws_dynamodb_table" "orders_table" {
   name           = "philomusica_orders"
   billing_mode   = "PROVISIONED"
-  hash_key       = "Reference"
-  range_key      = "ConcertID"
+  hash_key       = "orderReference"
+  range_key      = "concertID"
   write_capacity = 2
   read_capacity  = 2
   # DynamoDB table with the following fields
-  # Reference (S) | ConcertID (S) | FirstName (S) | LastName (S) | EmailAddress (S) | NumOfFullPrice (N) | NumOfConcessions (N) | Status (S)
+  # orderReference (S) | concertID (S) | FirstName (S) | LastName (S) | EmailAddress (S) | NumOfFullPrice (N) | NumOfConcessions (N) | Status (S)
 
   attribute {
-    name = "Reference"
+    name = "orderReference"
     type = "S"
   }
 
   attribute {
-    name = "ConcertID"
+    name = "concertID"
     type = "S"
   }
 

@@ -25,3 +25,23 @@ variable "spf_domain" {
 variable "google_site_verification_key" {
   type = string
 }
+
+variable "stripe_secret" {
+  type = string
+}
+
+variable "transaction_fee_percentage" {
+  type = string
+}
+
+variable "transaction_fee_flat_rate" {
+  type = string
+}
+
+variable "stripe_webhook_secret" {
+  type = string
+}
+
+variable "sender_address" {
+  type = string
+}

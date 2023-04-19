@@ -41,6 +41,11 @@ resource "aws_iam_role" "concerts" {
 POLICY
 }
 
+resource "aws_cloudwatch_log_group" "get_concerts_log_group" {
+  name              = "/aws/lambda/${aws_lambda_function.get_concerts.function_name}"
+  retention_in_days = 14
+}
+
 resource "aws_iam_policy" "concerts_lambda_policy" {
   name = "concerts_lambda_policy"
   path = "/"
@@ -53,8 +58,18 @@ resource "aws_iam_policy" "concerts_lambda_policy" {
         ]
         Resource = "${aws_dynamodb_table.concerts_table.arn}"
         Effect   = "Allow"
-        Sid      = "1"
+        Sid      = "0"
       },
+      {
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+        ]
+        Resource = "${aws_cloudwatch_log_group.get_concerts_log_group.arn}:*"
+        Effect   = "Allow"
+        Sid      = "1"
+      }
     ]
     Version = "2012-10-17"
   })
