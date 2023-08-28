@@ -11,8 +11,8 @@ resource "aws_lambda_function" "get_concerts" {
   filename      = data.archive_file.dummy_archive.output_path
   function_name = "philomusica-tickets-get-concerts"
   role          = aws_iam_role.concerts.arn
-  handler       = "bin/main"
-  runtime       = "go1.x"
+  handler       = "bootstrap"
+  runtime       = "provided.al2"
   environment {
     variables = {
       CONCERTS_TABLE = aws_dynamodb_table.concerts_table.name

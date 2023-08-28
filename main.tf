@@ -13,6 +13,7 @@ provider "aws" {
 }
 
 terraform {
+  required_version = ">=1.4.5"
   backend "s3" {
     bucket = "philo-web-terraform-state"
     key    = "philomusica.tfstate"
