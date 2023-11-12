@@ -103,7 +103,7 @@ resource "aws_api_gateway_integration_response" "contact_options" {
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
     "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'",
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'https://${var.domain_name}'"
   }
 
   response_templates = {
@@ -171,7 +171,7 @@ resource "aws_api_gateway_method_response" "concerts_get" {
 }
 
 #####################################################################
-### BASKET SERVICE REST API ### 
+### CHECKOUT SERVICE REST API ###
 ##################################################################### 
 resource "aws_api_gateway_resource" "order" {
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
@@ -208,7 +208,7 @@ resource "aws_api_gateway_integration" "order_post" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   content_handling        = "CONVERT_TO_TEXT"
-  uri                     = aws_lambda_function.basket_service.invoke_arn
+  uri                     = aws_lambda_function.checkout_service.invoke_arn
   depends_on              = [aws_api_gateway_method.order_post]
 }
 
@@ -261,7 +261,7 @@ resource "aws_api_gateway_integration_response" "order_options" {
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
     "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'",
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'https://${var.domain_name}'"
   }
 
   response_templates = {
@@ -361,7 +361,7 @@ resource "aws_api_gateway_integration_response" "stripe_webhook_options" {
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
     "method.response.header.Access-Control-Allow-Methods" = "'OPTIONS,POST'",
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'https://${var.domain_name}'"
   }
 
   response_templates = {

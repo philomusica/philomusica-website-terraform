@@ -12,7 +12,7 @@ resource "aws_lambda_function" "contact" {
   function_name = "philomusica-contact-form"
   role          = aws_iam_role.contact.arn
   handler       = "index.handler"
-  runtime       = "nodejs14.x"
+  runtime       = "nodejs18.x"
   environment {
     variables = {
       RECAPTCHA_SECRET = "changeme"

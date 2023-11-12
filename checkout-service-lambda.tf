@@ -1,18 +1,18 @@
-resource "aws_lambda_permission" "apigw_lambda_basket_service" {
+resource "aws_lambda_permission" "apigw_lambda_checkout_service" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.basket_service.function_name
+  function_name = aws_lambda_function.checkout_service.function_name
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "arn:aws:execute-api:${var.aws_region}:${var.account_id}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.order_post.http_method}${aws_api_gateway_resource.order.path}"
 }
 
-resource "aws_lambda_function" "basket_service" {
+resource "aws_lambda_function" "checkout_service" {
   filename      = data.archive_file.dummy_archive.output_path
-  function_name = "philomusica-tickets-basket-service"
-  role          = aws_iam_role.basket_service.arn
+  function_name = "philomusica-tickets-checkout-service"
+  role          = aws_iam_role.checkout_service.arn
   handler       = "bin/main"
-  runtime       = "go1.x"
+  runtime       = "provided.al2"
   environment {
     variables = {
       CONCERTS_TABLE             = aws_dynamodb_table.concerts_table.name
@@ -24,8 +24,8 @@ resource "aws_lambda_function" "basket_service" {
   }
 }
 
-resource "aws_iam_role" "basket_service" {
-  name = "philomusica-get-basket-service-role"
+resource "aws_iam_role" "checkout_service" {
+  name = "philomusica-get-checkout-service-role"
 
   assume_role_policy = <<POLICY
 {
@@ -44,13 +44,13 @@ resource "aws_iam_role" "basket_service" {
 POLICY
 }
 
-resource "aws_cloudwatch_log_group" "basket_service_log_group" {
-  name              = "/aws/lambda/${aws_lambda_function.basket_service.function_name}"
+resource "aws_cloudwatch_log_group" "checkout_service_log_group" {
+  name              = "/aws/lambda/${aws_lambda_function.checkout_service.function_name}"
   retention_in_days = 14
 }
 
-resource "aws_iam_policy" "basket_service_lambda_policy" {
-  name = "basket_service_lambda_policy"
+resource "aws_iam_policy" "checkout_service_lambda_policy" {
+  name = "checkout_service_lambda_policy"
   path = "/"
   policy = jsonencode({
     Statement = [
@@ -71,7 +71,7 @@ resource "aws_iam_policy" "basket_service_lambda_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents",
         ]
-        Resource = "${aws_cloudwatch_log_group.basket_service_log_group.arn}:*"
+        Resource = "${aws_cloudwatch_log_group.checkout_service_log_group.arn}:*"
         Effect   = "Allow"
         Sid      = "1"
       }
@@ -80,7 +80,7 @@ resource "aws_iam_policy" "basket_service_lambda_policy" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "basket_service_lambda_policy_attachment" {
-  role       = aws_iam_role.basket_service.name
-  policy_arn = aws_iam_policy.basket_service_lambda_policy.arn
+resource "aws_iam_role_policy_attachment" "checkout_service_lambda_policy_attachment" {
+  role       = aws_iam_role.checkout_service.name
+  policy_arn = aws_iam_policy.checkout_service_lambda_policy.arn
 }

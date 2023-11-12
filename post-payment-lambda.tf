@@ -12,13 +12,12 @@ resource "aws_lambda_function" "post_payment" {
   function_name = "philomusica-tickets-post-payment"
   role          = aws_iam_role.post_payment.arn
   handler       = "bin/main"
-  runtime       = "go1.x"
+  runtime       = "provided.al2"
   environment {
     variables = {
       CONCERTS_TABLE    = aws_dynamodb_table.concerts_table.name
       ORDERS_TABLE      = aws_dynamodb_table.orders_table.name
       STRIPE_SECRET     = var.stripe_webhook_secret
-      REDEEM_TICKET_API = "https://api.philomusica.org.uk/redeem"
       SENDER_ADDRESS    = var.sender_address
     }
   }
