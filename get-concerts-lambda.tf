@@ -4,22 +4,20 @@ resource "aws_lambda_permission" "apigw_lambda_get_concerts" {
   function_name = aws_lambda_function.get_concerts.function_name
   principal     = "apigateway.amazonaws.com"
 
-  source_arn = "arn:aws:execute-api:${var.aws_region}:${var.account_id}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.concerts.http_method}${aws_api_gateway_resource.concerts.path}"
+  source_arn = "arn:aws:execute-api:${var.aws_region}:${var.account_id}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.concerts_get.http_method}${aws_api_gateway_resource.concerts.path}"
 }
 
 resource "aws_lambda_function" "get_concerts" {
-  filename = data.archive_file.dummy_archive.output_path
+  filename      = data.archive_file.dummy_archive.output_path
   function_name = "philomusica-tickets-get-concerts"
   role          = aws_iam_role.concerts.arn
-  handler       = "bin/main"
-  runtime       = "go1.x"
+  handler       = "bootstrap"
+  runtime       = "provided.al2"
   environment {
-	variables = {
-	  TABLE_NAME = "changeme"
-	}
-  }
-  lifecycle {
-	ignore_changes = [ environment[0].variables ]
+    variables = {
+      CONCERTS_TABLE = aws_dynamodb_table.concerts_table.name
+      ORDERS_TABLE   = aws_dynamodb_table.orders_table.name
+    }
   }
 }
 
@@ -43,20 +41,35 @@ resource "aws_iam_role" "concerts" {
 POLICY
 }
 
+resource "aws_cloudwatch_log_group" "get_concerts_log_group" {
+  name              = "/aws/lambda/${aws_lambda_function.get_concerts.function_name}"
+  retention_in_days = 14
+}
+
 resource "aws_iam_policy" "concerts_lambda_policy" {
   name = "concerts_lambda_policy"
   path = "/"
   policy = jsonencode({
     Statement = [
-	  {
+      {
         Action = [
-            "dynamodb:Scan",
-            "dynamodb:GetItem",
+          "dynamodb:Scan",
+          "dynamodb:GetItem",
         ]
-        Resource = "${aws_dynamodb_table.concert_tickets_table.arn}"
-        Effect = "Allow"
-        Sid = "1"
+        Resource = "${aws_dynamodb_table.concerts_table.arn}"
+        Effect   = "Allow"
+        Sid      = "0"
       },
+      {
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+        ]
+        Resource = "${aws_cloudwatch_log_group.get_concerts_log_group.arn}:*"
+        Effect   = "Allow"
+        Sid      = "1"
+      }
     ]
     Version = "2012-10-17"
   })
