@@ -376,7 +376,7 @@ resource "aws_api_gateway_integration_response" "stripe_webhook_options" {
 
 resource "aws_api_gateway_deployment" "api" {
   rest_api_id       = aws_api_gateway_rest_api.api.id
-  stage_description = sha256(file("api-gateway.tf")) # Forces replacement of deployment if update to api-gateway. Otherwise it uses the same deployment, despite changes to methods (for example)
+  #stage_description = sha256(file("api-gateway.tf")) # Forces replacement of deployment if update to api-gateway. Otherwise it uses the same deployment, despite changes to methods (for example)
   lifecycle {
     create_before_destroy = true
   }

@@ -12,7 +12,7 @@ resource "aws_lambda_function" "post_payment" {
   function_name = "philomusica-tickets-post-payment"
   role          = aws_iam_role.post_payment.arn
   handler       = "bin/main"
-  runtime       = "provided.al2"
+  runtime       = "provided.al2023"
   environment {
     variables = {
       CONCERTS_TABLE    = aws_dynamodb_table.concerts_table.name

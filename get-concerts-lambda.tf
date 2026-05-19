@@ -12,7 +12,7 @@ resource "aws_lambda_function" "get_concerts" {
   function_name = "philomusica-tickets-get-concerts"
   role          = aws_iam_role.concerts.arn
   handler       = "bootstrap"
-  runtime       = "provided.al2"
+  runtime       = "provided.al2023"
   environment {
     variables = {
       CONCERTS_TABLE = aws_dynamodb_table.concerts_table.name
